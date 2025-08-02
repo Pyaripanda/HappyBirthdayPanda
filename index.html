@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape" />
-  <title>Happy Birthday Khushi - Harry Potter</title>
+  <title>Happy Birthday Khushi</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -25,12 +25,6 @@
       height: 100vh;
       z-index: 1;
       pointer-events: none;
-    }
-
-    .rotate-left {
-      transform: translate(-50%, -50%) rotate(-90deg);
-      width: 100vh;
-      height: 100vw;
     }
 
     #symbol {
@@ -55,13 +49,8 @@
       100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     }
 
-    .fade-out {
-      animation: fadeOut 1s forwards;
-    }
-
-    .fade-in {
-      animation: fadeIn 1s forwards;
-    }
+    .fade-out { animation: fadeOut 1s forwards; }
+    .fade-in { animation: fadeIn 1s forwards; }
 
     @keyframes fadeOut { to { opacity: 0; } }
     @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
@@ -69,13 +58,19 @@
 </head>
 <body>
 
-  <!-- Videos and audio -->
+  <!-- Initial rotation hint video -->
   <video id="rotateVideo" src="rotate.mp4" autoplay muted playsinline></video>
-  <video id="doorVideo" class="rotate-left" src="rotate1.mp4" muted playsinline loop style="display:none;"></video>
+
+  <!-- Door banging scene (already landscape) -->
+  <video id="doorVideo" src="rotate1.mp4" muted playsinline loop style="display:none;"></video>
+
+  <!-- Final video -->
   <video id="hagridVideo" src="hagrid.mp4" muted playsinline style="display:none;"></video>
+
+  <!-- Door audio -->
   <audio id="doorAudio" src="door.mp3"></audio>
 
-  <!-- Symbol shown after 2 loops -->
+  <!-- Optional pulse circle (used to mark tap time only if needed) -->
   <div id="symbol"></div>
 
   <script>
@@ -85,9 +80,9 @@
     const doorAudio = document.getElementById('doorAudio');
     const symbol = document.getElementById('symbol');
 
-    let doorVideoPlayCount = 0;
+    let doorLoopCount = 0;
+    let userCanTap = false;
 
-    // Step 1: rotate.mp4 ends → fade to rotate1.mp4
     rotateVideo.addEventListener('ended', () => {
       rotateVideo.classList.add('fade-out');
       setTimeout(() => {
@@ -95,48 +90,39 @@
         doorVideo.style.display = 'block';
         doorVideo.classList.add('fade-in');
         doorVideo.play();
-
-        // Play door.mp3 audio
-        doorAudio.play().catch(() => {
-          console.warn("Autoplay blocked");
-        });
+        doorAudio.play().catch(() => {});
       }, 1000);
     });
 
-    // Step 2: After 2 loops of rotate1.mp4, show symbol
     doorVideo.addEventListener('ended', () => {
-      doorVideoPlayCount++;
-      if (doorVideoPlayCount === 2) {
-        symbol.style.display = 'block';
+      doorLoopCount++;
+      if (doorLoopCount === 2) {
+        userCanTap = true;
+        symbol.style.display = 'block'; // remove this line if you want absolutely no visual cue
       }
     });
 
-    // Step 3: Tap anywhere to play hagrid.mp4
     document.body.addEventListener('click', async () => {
-      // Stop current video/audio
+      if (!userCanTap) return;
+
       doorVideo.pause();
       doorVideo.style.display = 'none';
       doorAudio.pause();
       doorAudio.currentTime = 0;
       symbol.style.display = 'none';
 
-      // Show hagrid video
       hagridVideo.style.display = 'block';
 
-      // Fullscreen (if supported)
-      const requestFullScreen = hagridVideo.requestFullscreen || hagridVideo.webkitRequestFullscreen || hagridVideo.msRequestFullscreen;
-      if (requestFullScreen) {
+      const fullscreenFn = hagridVideo.requestFullscreen || hagridVideo.webkitRequestFullscreen || hagridVideo.msRequestFullscreen;
+      if (fullscreenFn) {
         try {
-          await requestFullScreen.call(hagridVideo);
-        } catch (e) {
-          console.warn("Fullscreen failed", e);
-        }
+          await fullscreenFn.call(hagridVideo);
+        } catch (e) {}
       }
 
       hagridVideo.play();
     });
 
-    // Prevent touch from interfering
     [rotateVideo, doorVideo, hagridVideo].forEach(video => {
       video.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
     });
