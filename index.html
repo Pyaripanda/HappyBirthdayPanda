@@ -11,18 +11,18 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background-color: black;
+      background: black;
       font-family: 'Georgia', serif;
     }
 
     video {
       position: absolute;
-      object-fit: cover;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
       width: 100vw;
       height: 100vh;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
       z-index: 1;
       pointer-events: none;
     }
@@ -35,23 +35,23 @@
 
     #tap-indicator {
       position: absolute;
-      z-index: 2;
-      width: 100px;
-      height: 100px;
       top: 50%;
       left: 50%;
+      z-index: 2;
       transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       border: 2px solid white;
+      background: rgba(255, 255, 255, 0.1);
       color: white;
       font-size: 14px;
+      text-align: center;
       display: none;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       animation: pulse 1.5s infinite;
       pointer-events: auto;
-      text-align: center;
-      background-color: rgba(255, 255, 255, 0.1);
     }
 
     @keyframes pulse {
@@ -82,10 +82,10 @@
 
   <!-- Videos -->
   <video id="rotateVideo" src="rotate.mp4" autoplay muted playsinline></video>
-  <video id="doorVideo" class="rotate-left" src="rotate1.mp4" muted playsinline style="display:none;"></video>
+  <video id="doorVideo" class="rotate-left" src="rotate1.mp4" muted playsinline loop style="display:none;"></video>
   <video id="hagridVideo" src="hagrid.mp4" muted playsinline style="display:none;"></video>
 
-  <!-- Tap Circle -->
+  <!-- Tap to open -->
   <div id="tap-indicator">Tap<br>to Open</div>
 
   <script>
@@ -94,7 +94,7 @@
     const hagridVideo = document.getElementById('hagridVideo');
     const tapIndicator = document.getElementById('tap-indicator');
 
-    // Step 1: After rotate.mp4 ends, fade into door.mp4
+    // Step 1: Rotate video ends → show door video
     rotateVideo.addEventListener('ended', () => {
       rotateVideo.classList.add('fade-out');
       setTimeout(() => {
@@ -102,28 +102,38 @@
         doorVideo.style.display = 'block';
         doorVideo.classList.add('fade-in');
         doorVideo.play();
+        // Show tap indicator after a small delay (optional)
+        setTimeout(() => {
+          tapIndicator.style.display = 'flex';
+        }, 1000);
       }, 1000);
     });
 
-    // Step 2: After doorVideo plays ONCE, show tap circle
-    doorVideo.addEventListener('ended', () => {
-      tapIndicator.style.display = 'flex';
-    });
-
-    // Step 3: On tap, hide circle, play hagrid.mp4
-    tapIndicator.addEventListener('click', () => {
+    // Step 2: On tap → fullscreen + hagrid.mp4
+    tapIndicator.addEventListener('click', async () => {
       tapIndicator.style.display = 'none';
       doorVideo.style.display = 'none';
       hagridVideo.style.display = 'block';
+
+      // Attempt fullscreen if supported
+      const requestFullScreen = hagridVideo.requestFullscreen || hagridVideo.webkitRequestFullscreen || hagridVideo.msRequestFullscreen;
+      if (requestFullScreen) {
+        try {
+          await hagridVideo.requestFullscreen();
+        } catch (err) {
+          console.warn('Fullscreen failed:', err);
+        }
+      }
+
       hagridVideo.play();
     });
 
-    // Prevent videos from pausing due to touches
+    // Prevent touch from pausing videos
     [rotateVideo, doorVideo, hagridVideo].forEach(video => {
       video.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
     });
 
-    // Autoplay fallback
+    // Autoplay fallback on load
     window.addEventListener('load', () => {
       rotateVideo.play();
     });
