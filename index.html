@@ -3,77 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, orientation=landscape" />
-  <title>Happy Birthday Khushi - HP Style</title>
+  <title>Happy Birthday Khushi - Harry Potter Style</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     html, body {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
       background-color: black;
+      font-family: 'Georgia', serif;
     }
 
     video {
       position: absolute;
+      object-fit: cover;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       width: 100vw;
       height: 100vh;
-      object-fit: cover;
-      top: 0;
-      left: 0;
       z-index: 1;
       pointer-events: none;
     }
 
+    .rotate-left {
+      transform: translate(-50%, -50%) rotate(-90deg);
+      width: 100vh;
+      height: 100vw;
+    }
+
     #tap-indicator {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       z-index: 2;
       width: 100px;
       height: 100px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid #fff;
-      animation: pulse 1.5s infinite;
-      display: none;
-      justify-content: center;
-      align-items: center;
+      border: 2px solid white;
       color: white;
-      font-family: 'Georgia', serif;
-      text-align: center;
+      font-size: 14px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 1.5s infinite;
       pointer-events: auto;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.1);
     }
 
     @keyframes pulse {
-      0% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-      }
-      50% {
-        transform: translate(-50%, -50%) scale(1.1);
-        opacity: 0.8;
-      }
-      100% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-      }
+      0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50%  { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .fade-out {
+      animation: fadeOut 1s forwards;
+    }
+
+    .fade-in {
+      animation: fadeIn 1s forwards;
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Video containers -->
+  <!-- Videos -->
   <video id="rotateVideo" src="rotate.mp4" autoplay muted playsinline></video>
-  <video id="doorVideo" src="rotate1.mp4" muted playsinline loop style="display:none;"></video>
-  <video id="hagridVideo" src="hagrid.mp4" playsinline style="display:none;"></video>
+  <video id="doorVideo" class="rotate-left" src="rotate1.mp4" muted playsinline style="display:none;"></video>
+  <video id="hagridVideo" src="hagrid.mp4" muted playsinline style="display:none;"></video>
 
-  <!-- Tap indicator -->
+  <!-- Tap Circle -->
   <div id="tap-indicator">Tap<br>to Open</div>
 
   <script>
@@ -82,15 +94,23 @@
     const hagridVideo = document.getElementById('hagridVideo');
     const tapIndicator = document.getElementById('tap-indicator');
 
-    // When rotate.mp4 ends, fade into door.mp4
+    // Step 1: After rotate.mp4 ends, fade into door.mp4
     rotateVideo.addEventListener('ended', () => {
-      rotateVideo.style.display = 'none';
-      doorVideo.style.display = 'block';
-      doorVideo.play();
+      rotateVideo.classList.add('fade-out');
+      setTimeout(() => {
+        rotateVideo.style.display = 'none';
+        doorVideo.style.display = 'block';
+        doorVideo.classList.add('fade-in');
+        doorVideo.play();
+      }, 1000);
+    });
+
+    // Step 2: After doorVideo plays ONCE, show tap circle
+    doorVideo.addEventListener('ended', () => {
       tapIndicator.style.display = 'flex';
     });
 
-    // Tap interaction
+    // Step 3: On tap, hide circle, play hagrid.mp4
     tapIndicator.addEventListener('click', () => {
       tapIndicator.style.display = 'none';
       doorVideo.style.display = 'none';
@@ -98,14 +118,12 @@
       hagridVideo.play();
     });
 
-    // Prevent videos from pausing on touch
+    // Prevent videos from pausing due to touches
     [rotateVideo, doorVideo, hagridVideo].forEach(video => {
-      video.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-      }, { passive: false });
+      video.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
     });
 
-    // Ensure videos autoplay smoothly
+    // Autoplay fallback
     window.addEventListener('load', () => {
       rotateVideo.play();
     });
